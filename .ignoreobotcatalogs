@@ -1,0 +1,21 @@
+# obot catalog ignore patterns
+# Only packages/mcp-server/openclaw.yaml should be picked up as a catalog entry.
+# Everything else in this repo is application source code, not catalog definitions.
+
+src/
+apps/
+extensions/
+ui/
+docs/
+test/
+test-fixtures/
+scripts/
+skills/
+vendor/
+assets/
+patches/
+.github/
+node_modules/
+dist/
+packages/clawdbot/
+packages/moltbot/

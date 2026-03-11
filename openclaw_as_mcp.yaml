@@ -1,0 +1,105 @@
+name: OpenClaw
+shortDescription: Send messages across WhatsApp, Telegram, Discord, Slack and more via an OpenClaw AI gateway
+description: |
+  A Model Context Protocol (MCP) server that connects to a running OpenClaw gateway instance,
+  exposing its AI agent and multi-channel messaging capabilities as MCP tools.
+
+  OpenClaw is an open-source multi-channel AI messaging gateway. This MCP server acts as a
+  bridge so AI agents in obot can interact with a deployed OpenClaw instance.
+
+  ## Features
+
+  - **Chat with OpenClaw agents**: Send prompts to any configured AI agent on the gateway
+  - **Multi-channel messaging**: Send messages through WhatsApp, Telegram, Discord, Slack, Signal, iMessage
+  - **Tool invocation**: Call any OpenClaw built-in tool directly (web search, bash, memory, etc.)
+  - **Session management**: List and inspect active gateway sessions
+  - **Health monitoring**: Check gateway and channel connectivity status
+
+  ## What you'll need to connect
+
+  **Required:**
+  - **OpenClaw Gateway URL**: The HTTP URL of your running OpenClaw gateway instance (e.g. `http://your-gateway-host:18789`)
+  - **Gateway Token**: The authentication token configured for your gateway
+
+  ## Setting up OpenClaw
+
+  If you don't have a running OpenClaw instance, you can deploy one using Docker:
+
+  ```bash
+  docker run -e OPENCLAW_GATEWAY_TOKEN=your-secret-token \
+    -p 18789:18789 ghcr.io/mihai-satmarean/openclaw-appplatform:latest
+  ```
+
+  Or use the [openclaw-appplatform](https://github.com/mihai-satmarean/openclaw-appplatform)
+  for a full deployment to DigitalOcean App Platform with persistence and Tailscale.
+
+  Once running, enable the chat completions endpoint in your gateway config:
+
+  ```json5
+  {
+    gateway: {
+      http: {
+        endpoints: {
+          chatCompletions: { enabled: true }
+        }
+      }
+    }
+  }
+  ```
+
+  ## Available Tools
+
+  | Tool | Description |
+  |------|-------------|
+  | `openclaw_chat` | Send a prompt to an OpenClaw agent and get a response |
+  | `openclaw_invoke_tool` | Invoke any built-in gateway tool (web_search, bash, memory_search, etc.) |
+  | `openclaw_send_message` | Send a message on a specific channel (WhatsApp, Telegram, Discord, Slack, Signal, iMessage) |
+  | `openclaw_list_sessions` | List all active gateway sessions |
+  | `openclaw_health` | Check gateway and channel health |
+
+metadata:
+  categories: Communication, AI Agents
+icon: https://avatars.githubusercontent.com/u/192600739
+repoURL: https://github.com/mihai-satmarean/openclaw-mihai-fork
+runtime: containerized
+containerizedConfig:
+  image: ghcr.io/mihai-satmarean/openclaw-mcp-server:main
+  port: 3000
+  path: "/mcp"
+env:
+  - key: OPENCLAW_GATEWAY_URL
+    name: OpenClaw Gateway URL
+    required: true
+    sensitive: false
+    description: "HTTP URL of the running OpenClaw gateway (e.g. http://your-host:18789)"
+  - key: OPENCLAW_GATEWAY_TOKEN
+    name: Gateway Token
+    required: false
+    sensitive: true
+    description: "Authentication token for the OpenClaw gateway (leave empty if no auth is configured)"
+
+toolPreview:
+  - name: openclaw_chat
+    description: Send a prompt to an OpenClaw agent and get a response.
+    params:
+      prompt: The message or prompt to send to the agent
+      agentId: The agent ID to target (default 'main') (optional)
+      sessionKey: Session key for conversation continuity (optional)
+  - name: openclaw_invoke_tool
+    description: Invoke any OpenClaw gateway tool directly (e.g. sessions_list, web_search, bash, memory_search).
+    params:
+      tool: The tool name to invoke
+      args: Tool arguments as a JSON object (optional)
+      sessionKey: Session key to run the tool in (default 'main') (optional)
+  - name: openclaw_send_message
+    description: Send a message through an OpenClaw messaging channel.
+    params:
+      channel: "The channel to use: whatsapp, telegram, discord, slack, signal, or imessage"
+      target: "Target recipient: phone number for WhatsApp/Signal, chat ID for Telegram, channel ID for Discord/Slack"
+      message: The message text to send
+  - name: openclaw_list_sessions
+    description: List all active sessions in the OpenClaw gateway.
+    params: {}
+  - name: openclaw_health
+    description: Check the health status of the OpenClaw gateway and its channels.
+    params: {}

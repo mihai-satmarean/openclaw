@@ -1,0 +1,52 @@
+services:
+  openclaw-gateway:
+    image: ghcr.io/openclaw/openclaw:latest
+    environment:
+      HOME: /home/node
+      OPENCLAW_GATEWAY_TOKEN: test-local-token
+    volumes:
+      - ./config:/home/node/.openclaw
+      - ./workspace:/home/node/.openclaw/workspace
+    ports:
+      - "18789:18789"
+      - "3000:3000"
+    init: true
+    restart: unless-stopped
+    # --bind loopback avoids the bug #39228 (CLI --bind lan + empty config = crash loop)
+    # The MCP sidecar uses network_mode: service: to reach 127.0.0.1:18789
+    command:
+      [
+        "node",
+        "dist/index.js",
+        "gateway",
+        "--allow-unconfigured",
+        "--bind",
+        "loopback",
+        "--port",
+        "18789",
+      ]
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:18789/healthz').then((r)=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
+
+  openclaw-mcp:
+    image: openclaw-mcp-server:local
+    # Shares network namespace with the gateway - sees 127.0.0.1:18789
+    network_mode: "service:openclaw-gateway"
+    environment:
+      OPENCLAW_GATEWAY_URL: http://127.0.0.1:18789
+      OPENCLAW_GATEWAY_TOKEN: test-local-token
+      PORT: "3000"
+    depends_on:
+      openclaw-gateway:
+        condition: service_healthy
+    restart: unless-stopped
